@@ -370,6 +370,30 @@
     color: var(--text-muted);
     font-size: 0.8rem;
   }
+
+  /* ---- Provider Viability Section ---- */
+  .provider-section { margin-top: 24px; }
+  .provider-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 768px) {
+    .provider-layout { grid-template-columns: 1fr; }
+  }
+  .provider-section .section-intro {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .provider-section .profit-positive { color: var(--green); font-weight: 700; }
+  .provider-section .profit-negative { color: var(--red); font-weight: 700; }
+  .provider-section .margin-note {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 4px;
+  }
 </style>
 </head>
 <body>
@@ -497,6 +521,47 @@
     </div>
   </div>
 </div>
+
+  <!-- === PROVIDER VIABILITY === -->
+  <div class="provider-section">
+    <div class="card">
+      <h2>Provider Cost Breakdown</h2>
+      <p class="section-intro">What it costs the provider to run this lease, vs the breakeven fee from above.</p>
+
+      <div class="provider-layout">
+        <!-- Inputs -->
+        <div>
+          <div class="form-group">
+            <label>Wholesale rate above mortgage <span class="unit">provider's borrowing cost</span></label>
+            <div class="range-group">
+              <input type="range" id="wholesaleMarkupSlider" min="0" max="5" step="0.1" value="3.5">
+              <span class="range-value" id="wholesaleMarkupDisplay">+1.0%</span>
+            </div>
+            <div class="margin-note" id="wholesaleRateNote">Effective wholesale rate: 7.0%</div>
+          </div>
+          <div class="form-group">
+            <label>Provider admin cost <span class="unit">staff, systems, compliance</span></label>
+            <div class="input-row">
+              <span class="input-prefix">$</span>
+              <input type="number" id="providerAdminCost" value="100" min="0" max="500" step="5">
+              <span class="input-suffix">/month</span>
+            </div>
+          </div>
+          <div id="vehicle-discount-note" style="margin-top:14px;padding:10px 12px;background:#f7fafc;border-radius:6px;font-size:0.8rem;color:var(--text-secondary);line-height:1.5;">
+            <!-- filled by JS -->
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div>
+          <table class="kv-table" id="provider-pnl-table">
+            <!-- filled by JS -->
+          </table>
+          <div id="provider-verdict" style="margin-top:10px;font-size:0.85rem;color:var(--text-secondary);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <!-- === NOTES === -->
 <div class="notes">
@@ -672,6 +737,7 @@ function calculate() {
 
 function render() {
   const r = calculate();
+  window.lastSection1Result = r; // share with provider viability section
 
   // ── Validation warnings ──
   if (r.carPrice >= LCT_THRESHOLD) {
@@ -760,6 +826,102 @@ function render() {
 
   // ── Mortgage rate display ──
   $mortgageDisplay.textContent = '%';
+
+  // ── Provider viability (re-render when Section 1 inputs change) ──
+  renderProviderViability();
+}
+
+// ─── Provider Viability ──────────────────────────────────────────────────────
+
+const $wholesaleMarkupSlider = document.getElementById('wholesaleMarkupSlider');
+const $wholesaleMarkupDisplay = document.getElementById('wholesaleMarkupDisplay');
+const $wholesaleRateNote = document.getElementById('wholesaleRateNote');
+const $providerAdminCost = document.getElementById('providerAdminCost');
+
+function calcFinanceInterest(rate) {
+  const carPrice = parseFloat($carPrice.value) || 0;
+  const leaseTerm = parseInt($leaseTerm.value) || 5;
+  const residualPct = RESIDUAL_PCT[leaseTerm];
+  const residualValue = carPrice * residualPct;
+  const months = leaseTerm * 12;
+  const monthlyDepletion = (carPrice - residualValue) / months;
+  const monthlyRate = Math.exp(rate / 12) - 1;
+  let totalInterest = 0;
+  for (let m = 1; m <= months; m++) {
+    const balance = carPrice - (monthlyDepletion * (m - 1));
+    totalInterest += balance * monthlyRate;
+  }
+  return totalInterest;
+}
+
+function renderProviderViability() {
+  const mortgageRate = parseFloat($mortgageSlider.value) / 100;
+  const wholesaleMarkup = parseFloat($wholesaleMarkupSlider.value) / 100;
+  const wholesaleRate = mortgageRate + wholesaleMarkup;
+  const adminCost = parseFloat($providerAdminCost.value) || 0;
+  const leaseTerm = parseInt($leaseTerm.value) || 5;
+  const months = leaseTerm * 12;
+  const runningCosts = getRunningCosts();
+
+  const totalWholesaleInterest = calcFinanceInterest(wholesaleRate);
+  const wholesaleInterestMonthly = totalWholesaleInterest / months;
+
+  // Insurance commission: provider earns ~15% of the premium
+  const insuranceAnnual = parseFloat(document.getElementById('costInsurance').value) || 0;
+  const insuranceCommission = insuranceAnnual * 0.15 / 12;
+
+  // Income = breakeven pre-tax fee from Section 1 (provider is paid from pre-tax salary)
+  const s1 = window.lastSection1Result;
+  const income = s1 ? s1.preTaxMonthly : 0;
+
+  const totalIncome = income + insuranceCommission;
+
+  // Total provider cost = wholesale interest + running costs + admin
+  const totalCost = wholesaleInterestMonthly + (runningCosts / 12) + adminCost;
+  const headroom = totalIncome - totalCost;
+
+  // Fair price: cost is 80% of price, so price = cost / 0.80
+  const fairPrice = totalCost / 0.80;
+  const marginalRate = s1 ? s1.marginalRate : 0;
+  const fairPricePostTax = fairPrice * (1 - marginalRate);
+
+  const tbody =
+    '<tr><td colspan="2"><strong>Income</strong></td></tr>' +
+    '<tr><td>&nbsp;&nbsp;Breakeven fee (pre-tax, from above)</td><td><strong>' + fmtDollarsCents(income) + '/mo</strong></td></tr>' +
+    '<tr><td>&nbsp;&nbsp;Insurance commission (est. 15% of premium)</td><td>' + fmtDollarsCents(insuranceCommission) + '/mo</td></tr>' +
+    '<tr><td><strong>Total income</strong></td><td><strong>' + fmtDollarsCents(totalIncome) + '/mo</strong></td></tr>' +
+    '<tr><td colspan="2"><strong>Provider costs</strong></td></tr>' +
+    '<tr><td>&nbsp;&nbsp;Wholesale interest (' + (wholesaleRate * 100).toFixed(1) + '%)</td><td>' + fmtDollarsCents(wholesaleInterestMonthly) + '/mo</td></tr>' +
+    '<tr><td>&nbsp;&nbsp;Running costs (rego, insurance, servicing, tyres, charging)</td><td>' + fmtDollarsCents(runningCosts / 12) + '/mo</td></tr>' +
+    '<tr><td>&nbsp;&nbsp;Admin/staff/systems</td><td>' + fmtDollarsCents(adminCost) + '/mo</td></tr>' +
+    '<tr><td><strong>Total cost</strong></td><td><strong>' + fmtDollarsCents(totalCost) + '/mo</strong></td></tr>' +
+    '<tr><td><strong>Headroom</strong></td><td><strong class="' + (headroom >= 0 ? 'profit-positive' : 'profit-negative') + '">' + fmtDollarsCents(headroom) + '/mo</strong></td></tr>' +
+    '<tr style="border-top:2px solid var(--border);"><td colspan="2"><strong>Fair price estimate</strong></td></tr>' +
+    '<tr><td>&nbsp;&nbsp;Fair price (20% margin, pre-tax)</td><td><strong>' + fmtDollarsCents(fairPrice) + '/mo</strong></td></tr>' +
+    '<tr><td>&nbsp;&nbsp;This translates to your post-tax cost (' + fmtPct(marginalRate) + ' marginal rate)</td><td><strong>' + fmtDollarsCents(fairPricePostTax) + '/mo</strong></td></tr>';
+  document.getElementById('provider-pnl-table').innerHTML = tbody;
+
+  // Vehicle discount note (left column)
+  const carPriceV = parseFloat($carPrice.value) || 0;
+  const exGst = carPriceV / 1.1;
+  const discountLow = exGst * 0.03;
+  const discountHigh = exGst * 0.10;
+  const discountNote = document.getElementById('vehicle-discount-note');
+  discountNote.innerHTML = 'Providers typically negotiate a <strong>3–10% discount</strong> off list price (ex-GST: ' + fmtDollars(exGst) + '), worth a one-off <strong>' + fmtDollars(discountLow) + '–' + fmtDollars(discountHigh) + '</strong> — pure profit if they charge you full drive-away. Some also add an acquisition fee.';
+
+  // Headroom note (right column)
+  const noteEl = document.getElementById('provider-verdict');
+  if (income > 0) {
+    if (headroom >= 0) {
+      noteEl.innerHTML = 'At the breakeven fee, the provider has <strong>' + fmtDollarsCents(headroom) + '/mo</strong> headroom above their costs (including insurance commission).';
+    } else {
+      noteEl.innerHTML = 'At the breakeven fee, the provider runs a <strong>' + fmtDollarsCents(Math.abs(headroom)) + '/mo</strong> shortfall. They would need a higher fee, finance rate markup, or other revenue to break even.';
+    }
+  }
+
+  // Update displays
+  $wholesaleMarkupDisplay.textContent = '+' + (parseFloat($wholesaleMarkupSlider.value)).toFixed(1) + '%';
+  $wholesaleRateNote.textContent = 'Effective wholesale rate: ' + (wholesaleRate * 100).toFixed(1) + '% (mortgage ' + (mortgageRate * 100).toFixed(1) + '% + ' + (wholesaleMarkup * 100).toFixed(1) + '%)';
 }
 
 // ─── Event listeners ─────────────────────────────────────────────────────────
@@ -791,6 +953,10 @@ $regoState.addEventListener('change', function () {
 for (const input of costInputs) {
   input.addEventListener('input', render);
 }
+
+// ─── Provider viability event listeners ──────────────────────────────────────
+$wholesaleMarkupSlider.addEventListener('input', renderProviderViability);
+$providerAdminCost.addEventListener('input', renderProviderViability);
 
 // ─── Initial render ──────────────────────────────────────────────────────────
 render();

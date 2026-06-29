@@ -487,7 +487,7 @@
     <div class="card result-card" id="breakeven-card">
       <h2>Breakeven Provider Fee</h2>
       <div class="breakeven-box" id="breakeven-box">
-        <div class="label">Maximum take-home pay drop before mortgage offset wins</div>
+        <div class="label">Maximum take-home pay drop before buying outright wins</div>
         <div class="monthly" id="breakeven-monthly">—</div>
         <div class="annual" id="breakeven-annual"></div>
         <div class="post-tax-note" id="breakeven-pre-tax"></div>
@@ -506,7 +506,7 @@
       <li><strong>RFBA impact:</strong> A Reportable Fringe Benefit Amount of approximately <strong id="rfba-amount">—</strong> will appear on your income statement, even though no FBT is paid. This may affect Medicare Levy Surcharge, HECS/HELP repayments, Family Tax Benefit, and child support calculations.</li>
       <li><strong>Residual value:</strong> This assumes the car is sold for exactly the ATO residual value at lease end. If it sells for more, the lease result improves. If less, it worsens.</li>
       <li><strong>Post-March 2027:</strong> The full FBT exemption may change (proposed but not yet legislated). Leases commencing before any rule change are expected to be grandfathered.</li>
-      <li><strong>LCT eligibility:</strong> The car must be a BEV under the LCT threshold ($91,387 for 2026–27), first held and used on/after 1 July 2022, and must never have had LCT paid on it.</li>
+      <li><strong>LCT eligibility:</strong> The car must be a BEV under the LCT threshold ($91,661 for 2026–27), first held and used on/after 1 July 2022, and must never have had LCT paid on it.</li>
       <li><strong>Salary below ~$45,000:</strong> The 21% marginal rate means savings are limited and the breakeven fee will be low.</li>
     </ul>
     <p class="disclaimer">This is a general estimate only. Individual results depend on specific lease terms, employer arrangements, and personal tax circumstances. Consult a financial adviser or tax professional before entering into a novated lease.</p>
@@ -534,7 +534,7 @@ const RESIDUAL_PCT = {
   5: 0.2813,
 };
 
-const LCT_THRESHOLD = 91387;
+const LCT_THRESHOLD = 91661;
 
 // Combined rego + CTP defaults (midpoint of realistic ranges for a $65k EV)
 const REGO_DEFAULTS = {
@@ -642,9 +642,11 @@ function calculate() {
   }
 
   // ── Step 9: Breakeven provider fee
-  // Fee allowance is in post-tax terms (both benefit and offset are post-tax).
-  // Provider fee is salary-sacrificed pre-tax, so: preTax = postTax / (1 − marginalRate)
-  const postTaxFeeAllowance = totalNovatedBenefit - totalOffsetSaving;
+  // Lease vs buying with mortgage offset/drawdown. Buying costs mortgage interest;
+  // leasing avoids it, so mortgage interest avoided is a lease benefit (added).
+  // Benefit and interest are both post-tax; provider fee is pre-tax salary sacrifice.
+  const mortgageInterestAvoided = totalOffsetSaving;
+  const postTaxFeeAllowance = totalNovatedBenefit + mortgageInterestAvoided;
   const postTaxMonthly = postTaxFeeAllowance / months;
   const postTaxAnnual = postTaxMonthly * 12;
   const preTaxMonthly = marginalRate < 1 ? postTaxMonthly / (1 - marginalRate) : postTaxMonthly;
@@ -659,7 +661,7 @@ function calculate() {
     residualPct, residualValue,
     annualFinanceCost, totalAnnualPackage,
     annualTaxSaving, annualGstSaving,
-    totalNovatedBenefit, totalOffsetSaving,
+    totalNovatedBenefit, mortgageInterestAvoided,
     postTaxMonthly, postTaxAnnual,
     preTaxMonthly, preTaxAnnual,
     rfba,
@@ -673,7 +675,7 @@ function render() {
 
   // ── Validation warnings ──
   if (r.carPrice >= LCT_THRESHOLD) {
-    $lctWarning.textContent = '⚠ This vehicle may exceed the LCT threshold for fuel-efficient vehicles ($91,387). Verify with your leasing provider.';
+    $lctWarning.textContent = '⚠ This vehicle may exceed the LCT threshold for fuel-efficient vehicles ($91,661). Verify with your leasing provider.';
     $lctWarning.className = 'validation-warning visible warn';
   } else {
     $lctWarning.className = 'validation-warning';
@@ -692,7 +694,7 @@ function render() {
     ['Annual tax saving', fmtDollars(r.annualTaxSaving)],
     ['Annual GST saving', fmtDollars(r.annualGstSaving)],
     ['Total novated benefit (before fees, ' + r.leaseTerm + 'yr)', fmtDollars(r.totalNovatedBenefit)],
-    ['Total mortgage offset saving (' + r.leaseTerm + 'yr, compound)', fmtDollars(r.totalOffsetSaving)],
+    ['Mortgage interest avoided by leasing (' + r.leaseTerm + 'yr, compound)', fmtDollars(r.mortgageInterestAvoided)],
   ];
   const tbody = rows.map(row =>
     '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td></tr>'
@@ -715,7 +717,7 @@ function render() {
   // ── Pre-tax equivalent (smaller annotation) ──
   const preTaxNote = document.getElementById('breakeven-pre-tax');
   if (postTaxMonthly > 0 && r.marginalRate > 0 && r.marginalRate < 1) {
-    preTaxNote.textContent = 'Pre-tax salary sacrifice: ' + fmtDollarsCents(r.preTaxMonthly) + '/month (at ' + fmtPct(r.marginalRate) + ' marginal rate)';
+    preTaxNote.textContent = 'Provider pre-tax charge to break even: ' + fmtDollarsCents(r.preTaxMonthly) + '/month (at ' + fmtPct(r.marginalRate) + ' marginal rate)';
   } else {
     preTaxNote.textContent = '';
   }
@@ -724,8 +726,8 @@ function render() {
   let tier, interpretation, verdictText;
   if (postTaxMonthly <= 0) {
     tier = 'difficult';
-    interpretation = 'Novated lease never beats mortgage offset at this combination.';
-    verdictText = 'Novated lease does not beat mortgage offset. Consider buying the car outright instead.';
+    interpretation = 'Novated lease never beats buying outright at this combination.';
+    verdictText = 'Novated lease does not beat buying outright. Consider paying cash instead.';
   } else if (postTaxMonthly < 70) {
     tier = 'difficult';
     interpretation = 'Hard to find a provider cheap enough.';
@@ -737,7 +739,7 @@ function render() {
   } else {
     tier = 'easy';
     interpretation = 'Most providers will come in under this — a clear win for the novated lease.';
-    verdictText = 'Easy win — with a breakeven of $' + postTaxMonthly.toFixed(0) + '/month take-home, most providers will leave you better off than a mortgage offset.';
+    verdictText = 'Easy win — with a breakeven of $' + postTaxMonthly.toFixed(0) + '/month take-home, most providers will leave you better off than buying outright.';
   }
 
   const breakevenBox = document.getElementById('breakeven-box');

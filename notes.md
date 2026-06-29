@@ -11,7 +11,7 @@ Right now, **Battery Electric Vehicles (BEVs) and hydrogen fuel cell vehicles** 
 A calculator must validate all four of these conditions: [youtube](https://www.youtube.com/watch?v=4R0v3u0uqgg)
 
 1. **Vehicle type** — Must be a Battery Electric Vehicle (BEV) or hydrogen fuel cell vehicle. No PHEVs, no mild hybrids. [youtube](https://www.youtube.com/watch?v=4R0v3u0uqgg)
-2. **LCT threshold** — The car's initial sale value must be **below the Luxury Car Tax (LCT) threshold** for fuel-efficient vehicles. For 2025–26, this is **$91,387**. The 2026–27 LCT threshold is **$91,387**. [paycal.com](https://paycal.com.au/ev-ice-novated-lease-calculator/)
+2. **LCT threshold** — The car's initial sale value must be **below the Luxury Car Tax (LCT) threshold** for fuel-efficient vehicles. For 2025–26, this is **$91,387**. The 2026–27 LCT threshold is **$91,661**. [paycal.com](https://paycal.com.au/ev-ice-novated-lease-calculator/)
 3. **LCT never paid** — If LCT was ever paid on the car by *any* prior owner, it is **permanently ineligible**, even if resold under the LCT threshold. This is critical for used EV calculations. [youtube](https://www.youtube.com/watch?v=4R0v3u0uqgg)
 4. **First held and used on/after 1 July 2022** — Pre-2022 EVs do not qualify. [youtube](https://www.youtube.com/watch?v=4R0v3u0uqgg)
 
@@ -118,7 +118,7 @@ This calculator is for **Battery Electric Vehicles (BEVs) only**. Do not attempt
 | Input | Notes | Default if not provided |
 |---|---|---|
 | Annual gross salary | Used to determine marginal tax rate | Required |
-| Car purchase price (drive-away, incl. GST) | Must be under $91,387 LCT threshold | Required |
+| Car purchase price (drive-away, incl. GST) | Must be under $91,661 LCT threshold | Required |
 | Lease term | 1–5 years | 5 years |
 | Annual running costs | Rego + insurance + servicing + tyres + electricity | $5,500 |
 | Mortgage interest rate | Current variable rate | 6.49% p.a. |
@@ -285,7 +285,7 @@ Echo back the inputs used (salary, car price, lease term, running costs, mortgag
 ---
 
 ## Validation Rules
-- If car price ≥ $91,387 → warn "This vehicle may exceed the LCT threshold for fuel-efficient vehicles. Verify with your leasing provider before proceeding."
+- If car price ≥ $91,661 → warn "This vehicle may exceed the LCT threshold for fuel-efficient vehicles. Verify with your leasing provider before proceeding."
 - If lease term is not 1–5 → reject and ask for a valid term
 - If salary is below ~$45,000 → note that the 21% marginal rate means savings are limited and the breakeven fee will be low
 

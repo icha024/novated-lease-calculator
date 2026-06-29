@@ -402,6 +402,11 @@
 <header>
   <h1>EV Novated Lease vs Mortgage Offset</h1>
   <p class="subtitle">Breakeven provider fee calculator — Australia 2026–27 &middot; Battery Electric Vehicles only</p>
+  <div style="margin-top:10px;color:var(--text-secondary);font-size:0.85rem;line-height:1.7;text-align:left;">
+    <p style="margin-bottom:6px;">This calculator compares an FBT-exempt EV novated lease against buying the car outright using your mortgage offset savings. It determines the maximum monthly provider fee the lease can absorb before paying cash from your offset account becomes the better option.</p>
+    <p style="margin-bottom:6px;">The results integrate your marginal tax rate, ATO minimum residual values, GST savings, and the compounding interest benefit of keeping your money in an offset account versus using it to buy the car.</p>
+    <p style="margin-bottom:0;"><strong style="color:var(--text);">An EV novated lease starts to make financial sense above ~$120k pre-tax salary, and the maximum car price eligible for the full FBT exemption is the FY2026–27 LCT threshold of $91,661.</strong></p>
+  </div>
 </header>
 
 <div class="layout">
@@ -557,6 +562,7 @@
           <table class="kv-table" id="provider-pnl-table">
             <!-- filled by JS -->
           </table>
+          <div id="fair-price-box" style="margin-top:14px;display:none;"></div>
           <div id="provider-verdict" style="margin-top:10px;font-size:0.85rem;color:var(--text-secondary);"></div>
         </div>
       </div>
@@ -895,11 +901,18 @@ function renderProviderViability() {
     '<tr><td>&nbsp;&nbsp;Running costs (rego, insurance, servicing, tyres, charging)</td><td>' + fmtDollarsCents(runningCosts / 12) + '/mo</td></tr>' +
     '<tr><td>&nbsp;&nbsp;Admin/staff/systems</td><td>' + fmtDollarsCents(adminCost) + '/mo</td></tr>' +
     '<tr><td><strong>Total cost</strong></td><td><strong>' + fmtDollarsCents(totalCost) + '/mo</strong></td></tr>' +
-    '<tr><td><strong>Headroom</strong></td><td><strong class="' + (headroom >= 0 ? 'profit-positive' : 'profit-negative') + '">' + fmtDollarsCents(headroom) + '/mo</strong></td></tr>' +
-    '<tr style="border-top:2px solid var(--border);"><td colspan="2"><strong>Fair price estimate</strong></td></tr>' +
-    '<tr><td>&nbsp;&nbsp;Fair price (20% margin, pre-tax)</td><td><strong>' + fmtDollarsCents(fairPrice) + '/mo</strong></td></tr>' +
-    '<tr><td>&nbsp;&nbsp;This translates to your post-tax cost (' + fmtPct(marginalRate) + ' marginal rate)</td><td><strong>' + fmtDollarsCents(fairPricePostTax) + '/mo</strong></td></tr>';
+    '<tr><td><strong>Headroom</strong></td><td><strong class="' + (headroom >= 0 ? 'profit-positive' : 'profit-negative') + '">' + fmtDollarsCents(headroom) + '/mo</strong></td></tr>';
   document.getElementById('provider-pnl-table').innerHTML = tbody;
+
+  // Fair price box (styled like breakeven box)
+  const fairBox = document.getElementById('fair-price-box');
+  fairBox.style.display = 'block';
+  fairBox.innerHTML =
+    '<div class="breakeven-box easy">' +
+      '<div class="label">Fair take-home impact for you (20% provider margin)</div>' +
+      '<div class="monthly">' + fmtDollarsCents(fairPricePostTax) + '<span style="font-size:1.2rem;font-weight:400;">/month</span></div>' +
+      '<div class="post-tax-note">Pre-tax provider fee: ' + fmtDollarsCents(fairPrice) + '/month (' + fmtPct(marginalRate) + ' marginal rate)</div>' +
+    '</div>';
 
   // Vehicle discount note (left column)
   const carPriceV = parseFloat($carPrice.value) || 0;

@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EV Novated Lease vs Mortgage Offset Calculator — Australia 2026–27</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1a202c;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --border: #e2e8f0;
+    --primary: #2b6cb0;
+    --primary-light: #ebf4ff;
+    --primary-dark: #1a4f7e;
+    --green: #276749;
+    --green-bg: #f0fff4;
+    --green-border: #c6f6d5;
+    --amber: #975a16;
+    --amber-bg: #fffff0;
+    --amber-border: #fefcbf;
+    --red: #9b2c2c;
+    --red-bg: #fff5f5;
+    --red-border: #fed7d7;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 20px;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; }
+
+  header {
+    text-align: center;
+    padding: 32px 0 24px;
+  }
+  header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    letter-spacing: -0.02em;
+  }
+  header .subtitle {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    body { padding: 12px; }
+    header h1 { font-size: 1.35rem; }
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+  }
+
+  .card h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+  }
+  .card h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 18px 0 10px;
+  }
+
+  /* ---- Inputs ---- */
+  .form-group {
+    margin-bottom: 14px;
+  }
+  .form-group:last-child { margin-bottom: 0; }
+
+  .form-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .form-group label .unit {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .input-prefix {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: #fafbfc;
+    color: var(--text);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(43,108,176,0.12);
+    background: #fff;
+  }
+
+  /* Running costs breakdown */
+  .costs-section {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+  .costs-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+  .costs-section .section-header span {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .costs-section .section-header .watch-out {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--amber);
+    font-style: italic;
+  }
+
+  .cost-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .cost-item label {
+    flex: 1;
+    font-size: 0.825rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+  .cost-item input {
+    width: 110px;
+    padding: 7px 10px;
+    font-size: 0.875rem;
+    text-align: right;
+  }
+
+  .cost-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .cost-total .total-value {
+    font-size: 1rem;
+    color: var(--primary-dark);
+  }
+
+  /* Range slider group */
+  .range-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .range-group input[type="range"] {
+    flex: 1;
+    padding: 0;
+    border: none;
+    background: transparent;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+  .range-group input[type="range"]:focus {
+    box-shadow: none;
+  }
+  .range-value {
+    min-width: 52px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  /* Validation messages */
+  .validation-warning {
+    font-size: 0.8rem;
+    margin-top: 4px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    display: none;
+  }
+  .validation-warning.visible { display: block; }
+  .validation-warning.warn {
+    background: var(--amber-bg);
+    color: var(--amber);
+    border: 1px solid var(--amber-border);
+  }
+
+  /* ---- Results ---- */
+  .result-card { margin-bottom: 16px; }
+  .result-card:last-child { margin-bottom: 0; }
+
+  .kv-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .kv-table tr {
+    border-bottom: 1px solid var(--border);
+  }
+  .kv-table tr:last-child { border-bottom: none; }
+  .kv-table td {
+    padding: 8px 0;
+    font-size: 0.9rem;
+  }
+  .kv-table td:first-child {
+    color: var(--text-secondary);
+  }
+  .kv-table td:last-child {
+    text-align: right;
+    font-weight: 500;
+  }
+
+  /* Breakeven box */
+  .breakeven-box {
+    text-align: center;
+    padding: 28px 20px;
+    border-radius: var(--radius);
+    position: relative;
+  }
+  .breakeven-box.easy {
+    background: var(--green-bg);
+    border: 2px solid var(--green-border);
+  }
+  .breakeven-box.marginal {
+    background: var(--amber-bg);
+    border: 2px solid var(--amber-border);
+  }
+  .breakeven-box.difficult {
+    background: var(--red-bg);
+    border: 2px solid var(--red-border);
+  }
+  .breakeven-box .label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .breakeven-box .monthly {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+  .breakeven-box.easy .monthly { color: var(--green); }
+  .breakeven-box.marginal .monthly { color: var(--amber); }
+  .breakeven-box.difficult .monthly { color: var(--red); }
+  .breakeven-box .annual {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .breakeven-box .post-tax-note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .breakeven-box .interpretation {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  .breakeven-box.easy .interpretation { color: var(--green); }
+  .breakeven-box.marginal .interpretation { color: var(--amber); }
+  .breakeven-box.difficult .interpretation { color: var(--red); }
+
+  /* Context band */
+  .verdict-band {
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-top: 12px;
+  }
+  .verdict-band.easy {
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid var(--green-border);
+  }
+  .verdict-band.marginal {
+    background: var(--amber-bg);
+    color: var(--amber);
+    border: 1px solid var(--amber-border);
+  }
+  .verdict-band.difficult {
+    background: var(--red-bg);
+    color: var(--red);
+    border: 1px solid var(--red-border);
+  }
+
+  /* Notes section */
+  .notes { margin-top: 32px; }
+  .notes .card {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  .notes h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 16px 0 6px;
+  }
+  .notes h3:first-child { margin-top: 0; }
+  .notes ul { padding-left: 18px; }
+  .notes li { margin-bottom: 4px; }
+  .notes .disclaimer {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>EV Novated Lease vs Mortgage Offset</h1>
+  <p class="subtitle">Breakeven provider fee calculator — Australia 2026–27 &middot; Battery Electric Vehicles only</p>
+</header>
+
+<div class="layout">
+
+  <!-- === INPUTS === -->
+  <div class="card" id="inputs-card">
+    <h2>Your Details</h2>
+
+    <div class="form-group">
+      <label>Annual gross salary <span class="unit">before tax</span></label>
+      <div class="input-row">
+        <span class="input-prefix">$</span>
+        <input type="number" id="salary" value="120000" min="0" max="1000000" step="1000">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Car drive-away price <span class="unit">incl. GST</span></label>
+      <div class="input-row">
+        <span class="input-prefix">$</span>
+        <input type="number" id="carPrice" value="65000" min="0" max="200000" step="500">
+      </div>
+      <div class="validation-warning" id="lct-warning"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Lease term</label>
+      <select id="leaseTerm">
+        <option value="1">1 year</option>
+        <option value="2">2 years</option>
+        <option value="3">3 years</option>
+        <option value="4">4 years</option>
+        <option value="5" selected>5 years</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Mortgage interest rate <span class="unit">0–10%</span></label>
+      <div class="range-group">
+        <input type="range" id="mortgageRateSlider" min="0" max="10" step="0.01" value="6">
+        <input type="number" id="mortgageRateInput" value="6.00" min="0" max="10" step="0.01" style="width:80px;text-align:right;padding:6px 8px;font-size:0.9rem;">
+        <span class="range-value" id="mortgageRateDisplay" style="min-width:auto;">%</span>
+      </div>
+    </div>
+
+    <!-- Running Costs Breakdown -->
+    <div class="costs-section">
+      <div class="section-header">
+        <span>Annual Running Costs Breakdown</span>
+        <span class="watch-out">Watch: some providers underquote these</span>
+      </div>
+
+      <div class="cost-item">
+        <label for="costRegoState">Rego + CTP</label>
+        <select id="costRegoState" style="width:80px;padding:5px 6px;font-size:0.825rem;flex-shrink:0;">
+          <option value="NSW" selected>NSW</option>
+          <option value="VIC">VIC</option>
+          <option value="QLD">QLD</option>
+          <option value="WA">WA</option>
+          <option value="SA">SA</option>
+          <option value="ACT">ACT</option>
+          <option value="TAS">TAS</option>
+          <option value="NT">NT</option>
+        </select>
+        <span class="input-prefix">$</span>
+        <input type="number" id="costRego" value="1100" min="0" max="5000" step="10">
+      </div>
+      <div class="cost-item">
+        <label for="costInsurance">Comprehensive insurance</label>
+        <span class="input-prefix">$</span>
+        <input type="number" id="costInsurance" value="2000" min="0" max="10000" step="50">
+      </div>
+      <div class="cost-item">
+        <label for="costServicing">Servicing &amp; maintenance</label>
+        <span class="input-prefix">$</span>
+        <input type="number" id="costServicing" value="325" min="0" max="10000" step="25">
+      </div>
+      <div class="cost-item">
+        <label for="costTyres">Tyres</label>
+        <span class="input-prefix">$</span>
+        <input type="number" id="costTyres" value="350" min="0" max="5000" step="50">
+      </div>
+      <div class="cost-item">
+        <label for="costCharging">Home charging (electricity)</label>
+        <span class="input-prefix">$</span>
+        <input type="number" id="costCharging" value="1000" min="0" max="5000" step="50">
+      </div>
+
+      <div class="cost-total">
+        <span>Total running costs</span>
+        <span class="total-value" id="runningCostsTotal">$5,460/year</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- === RESULTS === -->
+  <div>
+    <!-- Key Figures -->
+    <div class="card result-card" id="key-figures-card">
+      <h2>Key Figures</h2>
+      <table class="kv-table" id="key-figures-table">
+        <!-- filled by JS -->
+      </table>
+    </div>
+
+    <!-- Breakeven Result -->
+    <div class="card result-card" id="breakeven-card">
+      <h2>Breakeven Provider Fee</h2>
+      <div class="breakeven-box" id="breakeven-box">
+        <div class="label">Maximum take-home pay drop before mortgage offset wins</div>
+        <div class="monthly" id="breakeven-monthly">—</div>
+        <div class="annual" id="breakeven-annual"></div>
+        <div class="post-tax-note" id="breakeven-pre-tax"></div>
+        <div class="interpretation" id="breakeven-interpretation"></div>
+      </div>
+      <div class="verdict-band" id="verdict-band"></div>
+    </div>
+  </div>
+</div>
+
+<!-- === NOTES === -->
+<div class="notes">
+  <div class="card">
+    <h3>Important Notes</h3>
+    <ul>
+      <li><strong>RFBA impact:</strong> A Reportable Fringe Benefit Amount of approximately <strong id="rfba-amount">—</strong> will appear on your income statement, even though no FBT is paid. This may affect Medicare Levy Surcharge, HECS/HELP repayments, Family Tax Benefit, and child support calculations.</li>
+      <li><strong>Residual value:</strong> This assumes the car is sold for exactly the ATO residual value at lease end. If it sells for more, the lease result improves. If less, it worsens.</li>
+      <li><strong>Post-March 2027:</strong> The full FBT exemption may change (proposed but not yet legislated). Leases commencing before any rule change are expected to be grandfathered.</li>
+      <li><strong>LCT eligibility:</strong> The car must be a BEV under the LCT threshold ($91,387 for 2026–27), first held and used on/after 1 July 2022, and must never have had LCT paid on it.</li>
+      <li><strong>Salary below ~$45,000:</strong> The 21% marginal rate means savings are limited and the breakeven fee will be low.</li>
+    </ul>
+    <p class="disclaimer">This is a general estimate only. Individual results depend on specific lease terms, employer arrangements, and personal tax circumstances. Consult a financial adviser or tax professional before entering into a novated lease.</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const EFFECTIVE_MARGINAL_RATES = [
+  { min: 0,      max: 18200,  rate: 0.00 },  // 0% + 0% Medicare
+  { min: 18201,  max: 45000,  rate: 0.21 },  // 19% + 2% Medicare
+  { min: 45001,  max: 135000, rate: 0.34 },  // 32% + 2% Medicare
+  { min: 135001, max: 190000, rate: 0.39 },  // 37% + 2% Medicare
+  { min: 190001, max: Infinity, rate: 0.47 }, // 45% + 2% Medicare
+];
+
+const RESIDUAL_PCT = {
+  1: 0.6563,
+  2: 0.5625,
+  3: 0.4688,
+  4: 0.3750,
+  5: 0.2813,
+};
+
+const LCT_THRESHOLD = 91387;
+
+// Combined rego + CTP defaults (midpoint of realistic ranges for a $65k EV)
+const REGO_DEFAULTS = {
+  NSW: 1100,  // ~$900–$1,300
+  VIC: 1000,  // ~$900–$1,100
+  QLD: 900,   // ~$750–$1,050
+  WA:  1100,  // ~$900–$1,300
+  SA:  825,   // ~$700–$950
+  ACT: 875,   // ~$750–$1,000
+  TAS: 375,   // ~$300–$450
+  NT:  700,   // ~$600–$800
+};
+
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+
+const $salary = document.getElementById('salary');
+const $carPrice = document.getElementById('carPrice');
+const $leaseTerm = document.getElementById('leaseTerm');
+const $mortgageSlider = document.getElementById('mortgageRateSlider');
+const $mortgageInput = document.getElementById('mortgageRateInput');
+const $mortgageDisplay = document.getElementById('mortgageRateDisplay');
+const $lctWarning = document.getElementById('lct-warning');
+const $runningTotal = document.getElementById('runningCostsTotal');
+const $regoState = document.getElementById('costRegoState');
+
+const costInputs = [
+  document.getElementById('costRego'),
+  document.getElementById('costInsurance'),
+  document.getElementById('costServicing'),
+  document.getElementById('costTyres'),
+  document.getElementById('costCharging'),
+];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function fmtDollars(n) {
+  if (!isFinite(n)) return '—';
+  return '$' + Math.round(n).toLocaleString('en-AU');
+}
+
+function fmtDollarsCents(n) {
+  if (!isFinite(n)) return '—';
+  return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function fmtPct(n) {
+  return (n * 100).toFixed(1) + '%';
+}
+
+function getMarginalRate(salary) {
+  for (const b of EFFECTIVE_MARGINAL_RATES) {
+    if (salary >= b.min && salary <= b.max) return b.rate;
+  }
+  return 0.47;
+}
+
+function getRunningCosts() {
+  let total = 0;
+  for (const input of costInputs) {
+    total += parseFloat(input.value) || 0;
+  }
+  return total;
+}
+
+// ─── Calculation ─────────────────────────────────────────────────────────────
+
+function calculate() {
+  const salary = parseFloat($salary.value) || 0;
+  const carPrice = parseFloat($carPrice.value) || 0;
+  const leaseTerm = parseInt($leaseTerm.value) || 5;
+  const runningCosts = getRunningCosts();
+  const mortgageRate = parseFloat($mortgageSlider.value) / 100;
+
+  // ── Step 1: Marginal rate
+  const marginalRate = getMarginalRate(salary);
+
+  // ── Step 2: Residual value
+  const residualPct = RESIDUAL_PCT[leaseTerm];
+  const residualValue = carPrice * residualPct;
+
+  // ── Step 3: Annual finance cost
+  const annualFinanceCost = (carPrice - residualValue) / leaseTerm;
+
+  // ── Step 4: Total annual package
+  const totalAnnualPackage = annualFinanceCost + runningCosts;
+
+  // ── Step 5: Annual tax saving
+  const annualTaxSaving = totalAnnualPackage * marginalRate;
+
+  // ── Step 6: GST saving
+  const totalGstSaving = carPrice / 11;
+  const annualGstSaving = totalGstSaving / leaseTerm;
+
+  // ── Step 7: Total novated benefit (before fees)
+  const totalNovatedBenefit = (annualTaxSaving + annualGstSaving) * leaseTerm;
+
+  // ── Step 8: Mortgage offset saving (monthly compounding)
+  const months = leaseTerm * 12;
+  const monthlyDepletion = (carPrice - residualValue) / months;
+  const monthlyRate = Math.exp(mortgageRate / 12) - 1;
+  let totalOffsetSaving = 0;
+  for (let m = 1; m <= months; m++) {
+    const balance = carPrice - (monthlyDepletion * (m - 1));
+    totalOffsetSaving += balance * monthlyRate;
+  }
+
+  // ── Step 9: Breakeven provider fee
+  // Fee allowance is in post-tax terms (both benefit and offset are post-tax).
+  // Provider fee is salary-sacrificed pre-tax, so: preTax = postTax / (1 − marginalRate)
+  const postTaxFeeAllowance = totalNovatedBenefit - totalOffsetSaving;
+  const postTaxMonthly = postTaxFeeAllowance / months;
+  const postTaxAnnual = postTaxMonthly * 12;
+  const preTaxMonthly = marginalRate < 1 ? postTaxMonthly / (1 - marginalRate) : postTaxMonthly;
+  const preTaxAnnual = preTaxMonthly * 12;
+
+  // ── RFBA
+  const rfba = carPrice * 0.20 * 2.0802;
+
+  return {
+    salary, carPrice, leaseTerm, runningCosts, mortgageRate,
+    marginalRate,
+    residualPct, residualValue,
+    annualFinanceCost, totalAnnualPackage,
+    annualTaxSaving, annualGstSaving,
+    totalNovatedBenefit, totalOffsetSaving,
+    postTaxMonthly, postTaxAnnual,
+    preTaxMonthly, preTaxAnnual,
+    rfba,
+  };
+}
+
+// ─── Render ──────────────────────────────────────────────────────────────────
+
+function render() {
+  const r = calculate();
+
+  // ── Validation warnings ──
+  if (r.carPrice >= LCT_THRESHOLD) {
+    $lctWarning.textContent = '⚠ This vehicle may exceed the LCT threshold for fuel-efficient vehicles ($91,387). Verify with your leasing provider.';
+    $lctWarning.className = 'validation-warning visible warn';
+  } else {
+    $lctWarning.className = 'validation-warning';
+  }
+
+  // ── Running costs total display ──
+  $runningTotal.textContent = fmtDollars(r.runningCosts) + '/year';
+
+  // ── Key figures table ──
+  const rows = [
+    ['Effective marginal rate (incl. 2% Medicare)', fmtPct(r.marginalRate)],
+    ['ATO residual value (' + fmtPct(r.residualPct) + ')', fmtDollars(r.residualValue)],
+    ['Annual finance cost', fmtDollars(r.annualFinanceCost)],
+    ['Annual running costs (total)', fmtDollars(r.runningCosts)],
+    ['Total annual pre-tax package', fmtDollars(r.totalAnnualPackage)],
+    ['Annual tax saving', fmtDollars(r.annualTaxSaving)],
+    ['Annual GST saving', fmtDollars(r.annualGstSaving)],
+    ['Total novated benefit (before fees, ' + r.leaseTerm + 'yr)', fmtDollars(r.totalNovatedBenefit)],
+    ['Total mortgage offset saving (' + r.leaseTerm + 'yr, compound)', fmtDollars(r.totalOffsetSaving)],
+  ];
+  const tbody = rows.map(row =>
+    '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td></tr>'
+  ).join('');
+  document.getElementById('key-figures-table').innerHTML = tbody;
+
+  // ── Breakeven result (large number = post-tax take-home impact) ──
+  const postTaxMonthly = r.postTaxMonthly;
+  const postTaxAnnual = r.postTaxAnnual;
+
+  const monthlyDisplay = postTaxMonthly > 0
+    ? fmtDollarsCents(postTaxMonthly) + '<span style="font-size:1.2rem;font-weight:400;">/month</span>'
+    : '<span style="color:var(--red);">−' + fmtDollarsCents(Math.abs(postTaxMonthly)) + '</span><span style="font-size:1.2rem;font-weight:400;">/month</span>';
+
+  document.getElementById('breakeven-monthly').innerHTML = monthlyDisplay;
+  document.getElementById('breakeven-annual').textContent = postTaxAnnual > 0
+    ? '(' + fmtDollarsCents(postTaxAnnual) + '/year take-home)'
+    : '';
+
+  // ── Pre-tax equivalent (smaller annotation) ──
+  const preTaxNote = document.getElementById('breakeven-pre-tax');
+  if (postTaxMonthly > 0 && r.marginalRate > 0 && r.marginalRate < 1) {
+    preTaxNote.textContent = 'Pre-tax salary sacrifice: ' + fmtDollarsCents(r.preTaxMonthly) + '/month (at ' + fmtPct(r.marginalRate) + ' marginal rate)';
+  } else {
+    preTaxNote.textContent = '';
+  }
+
+  // ── Classification (thresholds are post-tax take-home amounts) ──
+  let tier, interpretation, verdictText;
+  if (postTaxMonthly <= 0) {
+    tier = 'difficult';
+    interpretation = 'Novated lease never beats mortgage offset at this combination.';
+    verdictText = 'Novated lease does not beat mortgage offset. Consider buying the car outright instead.';
+  } else if (postTaxMonthly < 70) {
+    tier = 'difficult';
+    interpretation = 'Hard to find a provider cheap enough.';
+    verdictText = 'Difficult — most providers charge more than $' + postTaxMonthly.toFixed(0) + '/month in take-home impact. You\'ll need to find a very low-cost provider.';
+  } else if (postTaxMonthly <= 170) {
+    tier = 'marginal';
+    interpretation = 'Shop around carefully — only competitive providers will beat this.';
+    verdictText = 'Marginal — you need a provider whose take-home impact is under $' + postTaxMonthly.toFixed(0) + '/month. Compare multiple quotes.';
+  } else {
+    tier = 'easy';
+    interpretation = 'Most providers will come in under this — a clear win for the novated lease.';
+    verdictText = 'Easy win — with a breakeven of $' + postTaxMonthly.toFixed(0) + '/month take-home, most providers will leave you better off than a mortgage offset.';
+  }
+
+  const breakevenBox = document.getElementById('breakeven-box');
+  breakevenBox.className = 'breakeven-box ' + tier;
+  document.getElementById('breakeven-interpretation').textContent = interpretation;
+
+  const verdictBand = document.getElementById('verdict-band');
+  verdictBand.className = 'verdict-band ' + tier;
+  verdictBand.textContent = verdictText;
+
+  // ── RFBA ──
+  document.getElementById('rfba-amount').textContent = fmtDollars(r.rfba);
+
+  // ── Low salary note ──
+  if (r.salary > 0 && r.salary < 45000) {
+    verdictBand.textContent += ' Note: Your marginal rate is only ' + fmtPct(r.marginalRate) + ', so savings are limited.';
+  }
+
+  // ── Mortgage rate display ──
+  $mortgageDisplay.textContent = '%';
+}
+
+// ─── Event listeners ─────────────────────────────────────────────────────────
+
+$salary.addEventListener('input', render);
+$carPrice.addEventListener('input', render);
+$leaseTerm.addEventListener('change', render);
+function syncMortgageFromSlider() {
+  $mortgageInput.value = parseFloat($mortgageSlider.value).toFixed(2);
+  render();
+}
+function syncMortgageFromInput() {
+  let v = parseFloat($mortgageInput.value);
+  if (isNaN(v)) return;
+  v = Math.max(0, Math.min(10, v));
+  $mortgageSlider.value = v;
+  render();
+}
+$mortgageSlider.addEventListener('input', syncMortgageFromSlider);
+$mortgageInput.addEventListener('input', syncMortgageFromInput);
+$regoState.addEventListener('change', function () {
+  const state = $regoState.value;
+  const def = REGO_DEFAULTS[state];
+  if (def !== undefined) {
+    document.getElementById('costRego').value = def;
+  }
+  render();
+});
+for (const input of costInputs) {
+  input.addEventListener('input', render);
+}
+
+// ─── Initial render ──────────────────────────────────────────────────────────
+render();
+</script>
+
+</body>
+</html>
